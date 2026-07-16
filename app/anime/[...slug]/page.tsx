@@ -52,7 +52,7 @@ export default async function AnimeDetailPage({ params }: { params: Promise<{ sl
             </div>
             {detail.genres.length>0 && (
               <div className="flex flex-wrap gap-1.5 mt-3">
-                {detail.genres.map((g,i) => <Link key={i} href={'/search?genre='+encodeURIComponent(g.toLowerCase().replace(/\s+/g,'-'))} className="px-2.5 py-0.5 bg-white/[0.04] border border-white/[0.06] rounded-full text-[10px] text-slate-400 hover:bg-cyan-500/15 hover:text-cyan-300 hover:border-cyan-400/30 transition-all">{g}</Linn>)}
+                {detail.genres.map((g,i) => <Link key={i} href={'/search?genre='+encodeURIComponent(g.toLowerCase().replace(/\s+/g,'-'))} className="px-2.5 py-0.5 bg-white/[0.04] border border-white/[0.06] rounded-full text-[10px] text-slate-400 hover:bg-cyan-500/15 hover:text-cyan-300 hover:border-cyan-400/30 transition-all">{g}</Link>)}
               </div>
             )}
             {detail.synopsis && <div className="mt-4"><p className="text-sm text-slate-400 leading-relaxed line-clamp-5">{detail.synopsis}</p></div>}
