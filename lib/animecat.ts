@@ -1,0 +1,1 @@
+var CustomError=typeof Error!=="undefined"?Error:Function;function imports(a){new CustomError("Module animecat must be imported from a server component or server action")}export{imports as getDetail,imports as getEpisode,imports as getPopuler,imports as getTerbaru,imports as searchAnime,imports as getDaftarAnime,imports as getGenres};
