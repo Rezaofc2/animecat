@@ -1,9 +1,9 @@
-
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 import { ArrowLeft, Maximize, ChevronLeft, ChevronRight, List, ExternalLink, Download, MonitorPlay, Lock, LockOpen } from "lucide-react";
 
 interface EpisodeData {
@@ -13,9 +13,11 @@ interface EpisodeData {
   relatedEpisodes: { title: string; slug: string; date: string }[];
 }
 
-export default function NontonPage() {
+function NontonPageInner() {
   const params = useParams();
+  const searchParams = useSearchParams();
   const slug = (params.slug as string[])?.join('/') || '';
+  const server = searchParams.get("server") || "2";
   const [data, setData] = useState<EpisodeData | null>(null);
   const [loading, setLoading] = useState(true);
   const [fullscreen, setFullscreen] = useState(false);
@@ -27,7 +29,7 @@ export default function NontonPage() {
   useEffect(() => {
     if (!slug) return;
     setLoading(true); setError("");
-    fetch('/api/animecat?action=episode&slug=' + encodeURIComponent(slug))
+    fetch('/api/animecat?action=episode&slug=' + encodeURIComponent(slug) + '&server=' + server)
       .then(r => r.json())
       .then(d => { if (d && d.title) setData(d); else setError("Episode tidak ditemukan"); setLoading(false); })
       .catch(() => { setError("Gagal memuat data"); setLoading(false); });
@@ -62,7 +64,6 @@ export default function NontonPage() {
     }
   }, []);
 
-  // Re-acquire wake lock on visibility change
   useEffect(() => {
     const onVisible = async () => {
       if (document.visibilityState === 'visible' && wakeLocked && !wakeLockRef.current && 'wakeLock' in navigator) {
@@ -88,6 +89,22 @@ export default function NontonPage() {
     const onFsChange = () => setFullscreen(!!document.fullscreenElement);
     document.addEventListener('fullscreenchange', onFsChange);
     return () => document.removeEventListener('fullscreenchange', onFsChange);
+  }, []);
+
+  useEffect(() => {
+    const activate = async () => {
+      if ('wakeLock' in navigator && !wakeLockRef.current) {
+        try {
+          wakeLockRef.current = await navigator.wakeLock.request('screen');
+          setWakeLocked(true);
+          wakeLockRef.current.addEventListener('release', () => {
+            wakeLockRef.current = null;
+            setWakeLocked(false);
+          });
+        } catch(e) {}
+      }
+    };
+    activate();
   }, []);
 
   const shortEp = (t: string) => {
@@ -153,12 +170,12 @@ export default function NontonPage() {
             <div className="max-w-5xl mx-auto px-4 mt-4">
               <div className="grid grid-cols-2 gap-3">
                 {data.prevSlug ? (
-                  <Link href={'/nonton/'+data.prevSlug} className="flex items-center justify-center gap-1.5 px-4 py-3 bg-white/[0.04] border border-white/[0.08] rounded-xl text-xs text-slate-300 hover:bg-white/[0.08] hover:text-white hover:border-cyan-400/30 transition-all">
+                  <Link href={'/nonton/'+data.prevSlug+'?server='+server} className="flex items-center justify-center gap-1.5 px-4 py-3 bg-white/[0.04] border border-white/[0.08] rounded-xl text-xs text-slate-300 hover:bg-white/[0.08] hover:text-white hover:border-cyan-400/30 transition-all">
                     <ChevronLeft size={16} />Episode Sebelumnya
                   </Link>
                 ) : <span className="flex items-center justify-center px-4 py-3 text-xs text-slate-700 rounded-xl">—</span>}
                 {data.nextSlug ? (
-                  <Link href={'/nonton/'+data.nextSlug} className="flex items-center justify-center gap-1.5 px-4 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-xl text-xs font-semibold hover:shadow-lg hover:shadow-cyan-500/25 transition-all">
+                  <Link href={'/nonton/'+data.nextSlug+'?server='+server} className="flex items-center justify-center gap-1.5 px-4 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-xl text-xs font-semibold hover:shadow-lg hover:shadow-cyan-500/25 transition-all">
                     Episode Selanjutnya<ChevronRight size={16} />
                   </Link>
                 ) : <span className="flex items-center justify-center px-4 py-3 text-xs text-slate-700 rounded-xl">—</span>}
@@ -205,7 +222,7 @@ export default function NontonPage() {
                 <h2 className="text-sm font-bold text-white flex items-center gap-2 mb-3"><List size={14} className="text-cyan-400" />Episode Lainnya</h2>
                 <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
                   {data.relatedEpisodes.slice(0, 25).map((ep,i) => (
-                    <Link key={i} href={'/nonton/'+ep.slug} className={'px-3 py-2 border rounded-lg text-xs font-medium transition-all shrink-0 ' + (ep.slug === slug ? 'border-cyan-400/30 bg-cyan-500/10 text-cyan-300' : 'border-white/[0.04] bg-white/[0.01] text-slate-400 hover:bg-white/[0.05] hover:text-slate-200')}>
+                    <Link key={i} href={'/nonton/'+ep.slug+'?server='+server} className={'px-3 py-2 border rounded-lg text-xs font-medium transition-all shrink-0 ' + (ep.slug === slug ? 'border-cyan-400/30 bg-cyan-500/10 text-cyan-300' : 'border-white/[0.04] bg-white/[0.01] text-slate-400 hover:bg-white/[0.05] hover:text-slate-200')}>
                       {shortEp(ep.title)}
                     </Link>
                   ))}
@@ -227,5 +244,17 @@ export default function NontonPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function NontomPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-[#0a0a12] flex items-center justify-center">
+        <div className="text-center text-slate-500"><div className="w-10 h-10 border-2 border-cyan-400/30 border-t-cyan-400 rounded-full animate-spin mx-auto mb-4" /><p className="text-sm">Memuat...</p></div>
+      </div>
+    }>
+      <NontonPageInner />
+    </Suspense>
   );
 }
