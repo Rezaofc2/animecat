@@ -18,6 +18,7 @@ function SearchPageInner() {
   const [results, setResults] = useState<AnimeCard[]>([]);
   const [loading, setLoading] = useState(false);
   const [showGenrePicker, setShowGenrePicker] = useState(false);
+  const server = sp.get("server") || "2";
 
   const allGenres = [
     "Action","Adventure","Comedy","Drama","Ecchi","Fantasy","Game","Harem","Historical","Horror",
@@ -45,19 +46,20 @@ function SearchPageInner() {
     let allResults: AnimeCard[] = [];
 
     if (tab === "cari" && query.trim()) {
-      try { const r = await fetch('/api/animecat?action=search&q=' + encodeURIComponent(query) + '&page=' + page); const d = await r.json(); allResults = Array.isArray(d)?d:[]; } catch { allResults = []; }
+      try { const r = await fetch('/api/animecat?action=search&q=' + encodeURIComponent(query) + '&page=' + page + '&server=' + server); const d = await r.json(); allResults = Array.isArray(d)?d:[]; } catch { allResults = []; }
     } else if (tab === "genre" && genre) {
-      try { const r = await fetch('/api/animecat?action=daftar&genre=' + encodeURIComponent(genre) + '&page=' + page); const d = await r.json(); allResults = Array.isArray(d)?d:[]; } catch { allResults = []; }
+      try { const r = await fetch('/api/animecat?action=daftar&genre=' + encodeURIComponent(genre) + '&page=' + page + '&server=' + server); const d = await r.json(); allResults = Array.isArray(d)?d:[]; } catch { allResults = []; }
     } else if (tab === "terbaru") {
-      try { const r = await fetch('/api/animecat?action=terbaru&page=' + page); const d = await r.json(); allResults = Array.isArray(d)?d:[]; } catch { allResults = []; }
+      try { const r = await fetch('/api/animecat?action=terbaru&page=' + page + '&server=' + server); const d = await r.json(); allResults = Array.isArray(d)?d:[]; } catch { allResults = []; }
     } else if (tab === "daftar") {
-      try { const r = await fetch('/api/animecat?action=daftar&order=' + order + '&page=' + page); const d = await r.json(); allResults = Array.isArray(d)?d:[]; } catch { allResults = []; }
+      try { const r = await fetch('/api/animecat?action=daftar&order=' + order + '&page=' + page + '&server=' + server); const d = await r.json(); allResults = Array.isArray(d)?d:[]; } catch { allResults = []; }
     }
 
     setResults(allResults);
     setLoading(false);
 
     const p = new URLSearchParams();
+    p.set("server", server);
     if (tab==="cari" && query.trim()) { p.set("q",query); if(page>1) p.set("page",String(page)); }
     else if (tab==="genre" && genre) { p.set("genre",genre); if(page>1) p.set("page",String(page)); }
     else if (tab==="terbaru") { p.set("tab","terbaru"); if(page>1) p.set("page",String(page)); }
@@ -127,7 +129,7 @@ function SearchPageInner() {
             {tab==="genre" && !genre && <div className="text-center py-10 text-slate-500"><p>Klik "Pilih Genre" di atas untuk memfilter anime</p></div>}
             {loading ? <div className="text-center py-16 text-slate-500">Memuat...</div> :
               tab==="cari" && !query.trim() ? <div className="text-center py-16 text-slate-500"><Search size={40} className="mx-auto mb-3 text-slate-600"/><p>Ketik kata kunci di atas untuk mencari anime</p></div> :
-              results.length>0 ? <AnimeGrid items={results} /> : (tab!=="genre"||genre) ? <div className="text-center py-16 text-slate-500">Tidak ada hasil</div> : null}
+              results.length>0 ? <AnimeGrid items={results} server={server} /> : (tab!=="genre"||genre) ? <div className="text-center py-16 text-slate-500">Tidak ada hasil</div> : null}
           </>
         )}
 
@@ -139,16 +141,16 @@ function SearchPageInner() {
           </div>
         )}
       </main>
-      <footer className="border-t border-white/[0.04] py-5 text-center text-[11px] text-slate-600">AnimeCat — Powered by Samehadaku</footer>
+      <footer className="border-t border-white/[0.04] py-5 text-center text-[11px] text-slate-600">AnimeCat — {server==="1"?'Samehadaku':'Otakudesu'}</footer>
     </div>
   );
 }
 
-function AnimeGrid({ items }: { items: AnimeCard[] }) {
+function AnimeGrid({ items, server }: { items: AnimeCard[]; server: string }) {
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
       {items.map((item, i) => (
-        <Link key={i} href={'/anime/'+item.slug} className="block group">
+        <Link key={i} href={'/anime/'+item.slug+'?server='+server} className="block group">
           <div className="relative aspect-[3/4] rounded-xl overflow-hidden bg-white/[0.03] border border-white/[0.06]">
             {item.poster ? <img src={item.poster} alt={item.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy"/> : <div className="w-full h-full flex items-center justify-center text-slate-700"><Tv size={32}/></div>}
             {item.episode && <span className="absolute top-2 left-2 px-2 py-0.5 bg-cyan-500/90 text-[10px] font-bold text-white rounded-md">{item.episode}</span>}
