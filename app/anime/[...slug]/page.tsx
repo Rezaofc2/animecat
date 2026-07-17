@@ -64,9 +64,14 @@ export default async function AnimeDetailPage({ params }: { params: Promise<{ sl
             )}
             {detail.synopsis && <div className="mt-4"><p className="text-sm text-slate-400 leading-relaxed line-clamp-5">{detail.synopsis}</p></div>}
             {detail.episodes.length>0 && (
-              <Link href={'/nonton/'+detail.episodes[detail.episodes.length-1].slug} className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-full text-sm font-semibold hover:shadow-lg hover:shadow-cyan-500/25 transition-all">
-                <Play size={14} fill="white" />Nonton Episode Terbaru
-              </Link>
+              <div className="flex items-center gap-3 mt-4">
+                <Link href={'/nonton/'+detail.episodes[0].slug} className="inline-flex items-center gap-2 px-4 py-2 bg-white/[0.04] border border-white/[0.08] text-white rounded-full text-sm font-semibold hover:bg-white/[0.08] hover:border-cyan-400/30 transition-all">
+                  <Play size={14} />Episode 1
+                </Link>
+                <Link href={'/nonton/'+detail.episodes[detail.episodes.length-1].slug} className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-full text-sm font-semibold hover:shadow-lg hover:shadow-cyan-500/25 transition-all">
+                  <Play size={14} fill="white" />Episode {detail.episodes.length}
+                </Link>
+              </div>
             )}
           </div>
         </div>
