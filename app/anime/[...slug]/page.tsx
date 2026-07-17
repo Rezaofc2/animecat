@@ -31,8 +31,10 @@ export default async function AnimeDetailPage({ params, searchParams }: { params
   if (!detail) notFound();
 
   const shortTitle = (t: string) => {
+    const epMatch = t.match(/Episode\s*\d+/i);
+    if (epMatch) return epMatch[0];
     // Remove "Subtitle Indonesia" suffix
-    const clean = t.replace(/\s*Subtitle Indonesia\s*$/i, '').replace(/\s*Episode\s*\d+\s*/i, '').trim();
+    const clean = t.replace(/\s*Subtitle Indonesia\s*$/i, '').trim();
     return clean.length > 25 ? clean.slice(0, 23) + '...' : clean;
   };
 
