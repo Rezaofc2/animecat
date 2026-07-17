@@ -64,6 +64,7 @@ export default async function AnimeDetailPage({ params, searchParams }: { params
                 {detail.genres.slice(0, 15).map((g,i) => <Link key={i} href={'/search?genre='+encodeURIComponent(g.toLowerCase().replace(/\s+/g,'-'))+'&server='+server} className="px-2.5 py-0.5 bg-white/[0.04] border border-white/[0.06] rounded-full text-[10px] text-slate-400 hover:bg-cyan-500/15 hover:text-cyan-300 hover:border-cyan-400/30 transition-all">{g}</Link>)}
               </div>
             )}
+            {detail.episodes.length>0 && (
               <div className="flex items-center gap-3 mt-4">
                 <Link href={'/nonton/'+detail.episodes[0].slug+'?server='+server} className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-full text-sm font-semibold hover:shadow-lg hover:shadow-cyan-500/25 transition-all">
                   <Play size={14} fill="white" />Episode {detail.episodes.length}
