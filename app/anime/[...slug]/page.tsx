@@ -8,6 +8,7 @@ export const revalidate = 300;
 
 interface AnimeDetail {
   title: string; poster: string; rating: string; type: string; status: string;
+  totalEpisodes?: string; duration?: string; releaseDate?: string; studio?: string;
   genres: string[]; synopsis: string;
   episodes: { title: string; slug: string; date: string }[];
   streamUrl?: string;
@@ -63,8 +64,6 @@ export default async function AnimeDetailPage({ params, searchParams }: { params
                 {detail.genres.slice(0, 15).map((g,i) => <Link key={i} href={'/search?genre='+encodeURIComponent(g.toLowerCase().replace(/\s+/g,'-'))+'&server='+server} className="px-2.5 py-0.5 bg-white/[0.04] border border-white/[0.06] rounded-full text-[10px] text-slate-400 hover:bg-cyan-500/15 hover:text-cyan-300 hover:border-cyan-400/30 transition-all">{g}</Link>)}
               </div>
             )}
-            {detail.synopsis && <div className="mt-4"><p className="text-sm text-slate-400 leading-relaxed line-clamp-5">{detail.synopsis}</p></div>}
-            {detail.episodes.length>0 && (
               <div className="flex items-center gap-3 mt-4">
                 <Link href={'/nonton/'+detail.episodes[0].slug+'?server='+server} className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-full text-sm font-semibold hover:shadow-lg hover:shadow-cyan-500/25 transition-all">
                   <Play size={14} fill="white" />Episode {detail.episodes.length}
@@ -76,6 +75,51 @@ export default async function AnimeDetailPage({ params, searchParams }: { params
             )}
           </div>
         </div>
+
+        {/* Metadata Info Table */}
+        {(detail.totalEpisodes || detail.duration || detail.releaseDate || detail.studio) && (
+          <div className="mb-6 p-4 bg-white/[0.02] border border-white/[0.04] rounded-xl">
+            <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
+              {detail.totalEpisodes && (
+                <div className="flex justify-between col-span-2 sm:col-span-1">
+                  <span className="text-slate-500">Total Episode</span>
+                  <span className="text-slate-200 font-medium">: {detail.totalEpisodes}</span>
+                </div>
+              )}
+              {detail.duration && (
+                <div className="flex justify-between col-span-2 sm:col-span-1">
+                  <span className="text-slate-500">Durasi</span>
+                  <span className="text-slate-200 font-medium">: {detail.duration}</span>
+                </div>
+              )}
+              {detail.releaseDate && (
+                <div className="flex justify-between col-span-2 sm:col-span-1">
+                  <span className="text-slate-500">Tanggal Rilis</span>
+                  <span className="text-slate-200 font-medium">: {detail.releaseDate}</span>
+                </div>
+              )}
+              {detail.studio && (
+                <div className="flex justify-between col-span-2 sm:col-span-1">
+                  <span className="text-slate-500">Studio</span>
+                  <span className="text-slate-200 font-medium">: {detail.studio}</span>
+                </div>
+              )}
+              {detail.genres.length > 0 && (
+                <div className="flex justify-between col-span-2">
+                  <span className="text-slate-500 shrink-0">Genre</span>
+                  <span className="text-slate-200 font-medium text-right">: {detail.genres.join(', ')}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Synopsis Section */}
+        {detail.synopsis && (
+          <div className="mb-6 p-4 bg-white/[0.02] border border-white/[0.04] rounded-xl">
+            <p className="text-sm text-slate-400 leading-relaxed">{detail.synopsis}</p>
+          </div>
+        )}
 
         <section>
           <h2 className="text-lg font-bold text-white flex items-center gap-2 mb-3"><Play size={16} className="text-cyan-400" fill="currentColor" />Daftar Episode <span className="text-sm font-normal text-slate-500">({detail.episodes.length})</span></h2>
