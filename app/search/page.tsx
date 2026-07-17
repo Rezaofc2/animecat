@@ -3,9 +3,9 @@
 import { useState, useEffect, useCallback, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowLeft, Search, X, Tv, ChevronLeft, ChevronRight, Play, ChevronDown } from "lucide-react";
+import { ArrowLeft, Search, X, Tv, ChevronLeft, ChevronRight, Play, ChevronDown, Calendar } from "lucide-react";
 
-interface AnimeCard { title: string; slug: string; poster: string; episode?: string; rating?: string; type?: string; }
+interface AnimeCard { title: string; slug: string; poster: string; episode?: string; rating?: string; type?: string; date?: string; day?: string; }
 
 function SearchPageInner() {
   const router = useRouter();
@@ -155,6 +155,18 @@ function AnimeGrid({ items, server }: { items: AnimeCard[]; server: string }) {
             {item.poster ? <img src={item.poster} alt={item.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy"/> : <div className="w-full h-full flex items-center justify-center text-slate-700"><Tv size={32}/></div>}
             {item.episode && <span className="absolute top-2 left-2 px-2 py-0.5 bg-cyan-500/90 text-[10px] font-bold text-white rounded-md">{item.episode}</span>}
             {item.rating && <span className="absolute top-2 right-2 px-1.5 py-0.5 bg-yellow-500/90 text-[10px] font-bold text-black rounded">★ {item.rating}</span>}
+            {/* Release date & day overlay */}
+            {item.date && (
+              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 to-transparent pt-6 pb-2 px-2">
+                <div className="flex items-center gap-1.5">
+                  <Calendar size={10} className="text-cyan-400 shrink-0" />
+                  <span className="text-[10px] font-semibold text-white/90 leading-none">{item.date}</span>
+                  {item.day && (
+                    <span className="text-[9px] font-medium text-cyan-400 bg-cyan-400/10 px-1.5 py-0.5 rounded leading-none ml-auto">{item.day}</span>
+                  )}
+                </div>
+              </div>
+            )}
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-3"><Play size={28} className="text-white/90" fill="white"/></div>
           </div>
           <h3 className="mt-2 text-sm font-medium text-slate-200 line-clamp-2 group-hover:text-cyan-300 transition-colors">{item.title}</h3>
