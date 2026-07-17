@@ -31,9 +31,9 @@ export default async function AnimeDetailPage({ params, searchParams }: { params
   if (!detail) notFound();
 
   const shortTitle = (t: string) => {
-    const epMatch = t.match(/Episode\s*\d+/i);
-    if (epMatch) return epMatch[0];
-    return t.length > 30 ? t.slice(0, 28) + '...' : t;
+    // Remove "Subtitle Indonesia" suffix
+    const clean = t.replace(/\s*Subtitle Indonesia\s*$/i, '').replace(/\s*Episode\s*\d+\s*/i, '').trim();
+    return clean.length > 25 ? clean.slice(0, 23) + '...' : clean;
   };
 
   return (
@@ -82,27 +82,23 @@ export default async function AnimeDetailPage({ params, searchParams }: { params
           <div className="mb-6 p-4 bg-white/[0.02] border border-white/[0.04] rounded-xl">
             <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
               {detail.totalEpisodes && (
-                <div className="flex justify-between col-span-2 sm:col-span-1">
-                  <span className="text-slate-500">Total Episode</span>
-                  <span className="text-slate-200 font-medium">: {detail.totalEpisodes}</span>
+                <div className="col-span-2 sm:col-span-1">
+                  <span className="text-slate-500">Total Episode:</span> <span className="text-slate-200 font-medium">{detail.totalEpisodes}</span>
                 </div>
               )}
               {detail.duration && (
-                <div className="flex justify-between col-span-2 sm:col-span-1">
-                  <span className="text-slate-500">Durasi</span>
-                  <span className="text-slate-200 font-medium">: {detail.duration}</span>
+                <div className="col-span-2 sm:col-span-1">
+                  <span className="text-slate-500">Durasi:</span> <span className="text-slate-200 font-medium">{detail.duration}</span>
                 </div>
               )}
               {detail.releaseDate && (
-                <div className="flex justify-between col-span-2 sm:col-span-1">
-                  <span className="text-slate-500">Tanggal Rilis</span>
-                  <span className="text-slate-200 font-medium">: {detail.releaseDate}</span>
+                <div className="col-span-2 sm:col-span-1">
+                  <span className="text-slate-500">Tanggal Rilis:</span> <span className="text-slate-200 font-medium">{detail.releaseDate}</span>
                 </div>
               )}
               {detail.studio && (
-                <div className="flex justify-between col-span-2 sm:col-span-1">
-                  <span className="text-slate-500">Studio</span>
-                  <span className="text-slate-200 font-medium">: {detail.studio}</span>
+                <div className="col-span-2 sm:col-span-1">
+                  <span className="text-slate-500">Studio:</span> <span className="text-slate-200 font-medium">{detail.studio}</span>
                 </div>
               )}
 
@@ -123,7 +119,7 @@ export default async function AnimeDetailPage({ params, searchParams }: { params
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
               {detail.episodes.map((ep,i) => (
                 <Link key={i} href={'/nonton/'+ep.slug+'?server='+server} className="flex items-center gap-2 px-3 py-2.5 bg-white/[0.02] border border-white/[0.04] rounded-xl hover:bg-white/[0.05] hover:border-cyan-400/20 transition-all group">
-                  <span className="text-[9px] font-bold text-cyan-400 shrink-0">{shortTitle(ep.title)}</span>
+                  <span className="text-[10px] font-medium text-white/80 line-clamp-1 truncate">{shortTitle(ep.title)}</span>
                   <span className="text-[10px] text-slate-500 ml-auto shrink-0">{ep.date}</span>
                   <ChevronRight size={12} className="text-slate-600 shrink-0 group-hover:text-cyan-400" />
                 </Link>
