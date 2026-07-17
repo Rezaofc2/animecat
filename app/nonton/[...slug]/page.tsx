@@ -107,10 +107,13 @@ function NontonPageInner() {
     activate();
   }, []);
 
-  const shortEp = (t: string) => {
-    const m = t.match(/Episode\s*(\d+)/i);
+  const shortEp = (title: string, epSlug: string) => {
+    const m = title.match(/Episode\s*(\d+)/i);
     if (m) return 'Episode ' + m[1];
-    return 'Episode ' + t.length > 20 ? t.slice(0, 18) + '...' : t;
+    // Try extract from slug: "foo-episode-5-sub-indo" -> "Episode 5"
+    const sm = epSlug.match(/episode[-_](\d+)/i);
+    if (sm) return 'Episode ' + sm[1];
+    return 'Episode ?';
   };
 
   const streamUrl = data?.streamUrl || '';
@@ -223,7 +226,7 @@ function NontonPageInner() {
                 <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
                   {data.relatedEpisodes.slice(0, 25).map((ep,i) => (
                     <Link key={i} href={'/nonton/'+ep.slug+'?server='+server} className={'px-3 py-2 border rounded-lg text-xs font-medium transition-all shrink-0 ' + (ep.slug === slug ? 'border-cyan-400/30 bg-cyan-500/10 text-cyan-300' : 'border-white/[0.04] bg-white/[0.01] text-slate-400 hover:bg-white/[0.05] hover:text-slate-200')}>
-                      {shortEp(ep.title)}
+                      {shortEp(ep.title, ep.slug)}
                     </Link>
                   ))}
                 </div>
