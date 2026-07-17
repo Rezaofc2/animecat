@@ -147,6 +147,7 @@ function SearchPageInner() {
 }
 
 function AnimeGrid({ items, server }: { items: AnimeCard[]; server: string }) {
+  const cleanTitle = (t: string) => t.replace(/\s*Episode\s+\d+.*$/i, '').trim();
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
       {items.map((item, i) => (
@@ -169,7 +170,7 @@ function AnimeGrid({ items, server }: { items: AnimeCard[]; server: string }) {
             )}
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-3"><Play size={28} className="text-white/90" fill="white"/></div>
           </div>
-          <h3 className="mt-2 text-sm font-medium text-slate-200 line-clamp-2 group-hover:text-cyan-300 transition-colors">{item.title}</h3>
+          <h3 className="mt-2 text-sm font-medium text-slate-200 line-clamp-2 group-hover:text-cyan-300 transition-colors">{cleanTitle(item.title)}</h3>
         </Link>
       ))}
     </div>
