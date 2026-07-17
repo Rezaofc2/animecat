@@ -1,0 +1,227 @@
+"use client";
+
+import { useState, useEffect, useRef, useCallback } from "react";
+import Link from "next/link";
+import { useParams } from "next/navigation";
+import { ArrowLeft, Maximize, Download, ChevronLeft, ChevronRight, List, ExternalLink } from "lucide-react";
+
+interface EpisodeData {
+  title: string; animeSlug?: string; prevSlug?: string; nextSlug?: string;
+  streamUrl?: string;
+  downloads: { quality: string; links: { name: string; url: string }[] }[];
+  relatedEpisodes: { title: string; slug: string; date: string }[];
+}
+
+export default function NontonPage() {
+  const params = useParams();
+  const slug = (params.slug as string[])?.join('/') || '';
+  const [data, setData] = useState<EpisodeData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [fullscreen, setFullscreen] = useState(false);
+  const [selectedQuality, setSelectedQuality] = useState('');
+  const [error, setError] = useState("");
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!slug) return;
+    setLoading(true); setError("");
+    fetch('/api/animecat?action=episode&slug=' + encodeURIComponent(slug))
+      .then(r => r.json())
+      .then(d => {
+        if (d && d.title) {
+          setData(d);
+          // Set default stream URL
+          if (!selectedQuality) {
+            const firstDL = d.downloads?.[0];
+            if (firstDL?.links?.[0]) setSelectedQuality(firstDL.links[0].url);
+            else if (d.streamUrl) setSelectedQuality(d.streamUrl);
+          }
+        } else setError("Episode tidak ditemukan");
+        setLoading(false);
+      })
+      .catch(() => { setError("Gagal memuat data"); setLoading(false); });
+  }, [slug]);
+
+  useEffect(() => {
+    if (!data) return;
+    try {
+      const h = JSON.parse(localStorage.getItem('animecat_history') || '[]');
+      h.unshift({ title: data.title, slug: data.animeSlug || slug.split('/')[0], poster: '', lastEp: data.title, progress: 100, date: new Date().toISOString() });
+      const seen = new Set(); const unique = h.filter((x: any) => { if (seen.has(x.slug)) return false; seen.add(x.slug); return true; }).slice(0, 50);
+      localStorage.setItem('animecat_history', JSON.stringify(unique));
+    } catch(e) {}
+  }, [data]);
+
+  const toggleFullscreen = useCallback(() => {
+    if (!document.fullscreenElement) containerRef.current?.requestFullscreen?.().catch(() => {});
+    else document.exitFullscreen().catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    const onFsChange = () => setFullscreen(!!document.fullscreenElement);
+    document.addEventListener('fullscreenchange', onFsChange);
+    return () => document.removeEventListener('fullscreenchange', onFsChange);
+  }, []);
+
+  const streamUrl = selectedQuality || data?.streamUrl || '';
+
+  if (loading) return (
+    <div className="min-h-screen bg-[#0a0a12] flex items-center justify-center">
+      <div className="text-center text-slate-500">
+        <div className="w-10 h-10 border-2 border-cyan-400/30 border-t-cyan-400 rounded-full animate-spin mx-auto mb-4" />
+        <p className="text-sm">Memuat episode...</p>
+      </div>
+    </div>
+  );
+
+  if (error || !data) return (
+    <div className="min-h-screen bg-[#0a0a12]">
+      <header className="sticky top-0 z-50 bg-[#0a0a12]/95 backdrop-blur border-b border-white/[0.04]">
+        <div className="max-w-5xl mx-auto px-4 h-14 flex items-center gap-2">
+          <Link href="/" className="p-2 -ml-2 text-slate-400 hover:text-white"><ArrowLeft size={18} /></Link>
+          <span className="text-sm text-slate-400">Episode tidak ditemukan</span>
+        </div>
+      </header>
+      <div className="flex items-center justify-center h-64 text-slate-500">{error}</div>
+    </div>
+  );
+
+  return (
+    <div className={'min-h-screen bg-[#0a0a12] ' + (fullscreen ? 'bg-black' : '')}>
+      {!fullscreen && (
+        <header className="sticky top-0 z-50 bg-[#0a0a12]/95 backdrop-blur border-b border-white/[0.04]">
+          <div className="max-w-5xl mx-auto px-4 h-14 flex items-center gap-2">
+            <Link href={data.animeSlug ? '/anime/' + data.animeSlug : '/'} className="p-2 -ml-2 text-slate-400 hover:text-white shrink-0"><ArrowLeft size={18} /></Link>
+            <span className="text-sm font-bold text-white truncate flex-1">{data.title}</span>
+            <button onClick={toggleFullscreen} className="p-2 text-slate-400 hover:text-cyan-400 transition-colors rounded-lg hover:bg-white/[0.05] shrink-0" title="Fullscreen"><Maximize size={16} /></button>
+          </div>
+        </header>
+      )}
+
+      <div ref={containerRef} className={fullscreen ? 'fixed inset-0 z-[9999] bg-black flex flex-col' : ''}>
+
+        {/* VIDEO PLAYER */}
+        <div className={'relative bg-black ' + (fullscreen ? 'flex-1' : 'aspect-video max-w-5xl mx-auto mt-4 rounded-xl overflow-hidden border border-white/[0.06]')}>
+          {streamUrl ? (
+            <iframe
+              key={streamUrl}
+              src={streamUrl}
+              className="w-full h-full"
+              allowFullScreen
+              allow="autoplay; encrypted-media; picture-in-picture"
+              sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+              referrerPolicy="no-referrer"
+            />
+          ) : (
+            <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-500">
+              <svg className="w-16 h-16 mb-3 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+              <p className="text-sm text-slate-400">Pilih kualitas video di bawah</p>
+              <p className="text-[11px] text-slate-600 mt-1">atau klik link download untuk menonton</p>
+            </div>
+          )}
+          {!fullscreen && streamUrl && (
+            <button onClick={toggleFullscreen} className="absolute top-3 right-3 p-2 bg-black/60 hover:bg-black/80 rounded-lg text-white/80 hover:text-white transition-colors z-10"><Maximize size={16} /></button>
+          )}
+        </div>
+
+        {!fullscreen && (
+          <>
+            {/* QUALITY SELECTOR */}
+            {data.downloads.length > 0 && (
+              <div className="max-w-5xl mx-auto px-4 mt-3">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-[11px] text-slate-500 font-medium">🎬 Kualitas:</span>
+                  {data.downloads.map((dl, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setSelectedQuality(dl.links[0]?.url || '')}
+                      className={'px-3 py-1.5 rounded-full text-[11px] font-semibold transition-all flex items-center gap-1 '
+                        + (selectedQuality === dl.links[0]?.url
+                          ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-400/40'
+                          : 'bg-white/[0.04] border border-white/[0.08] text-slate-400 hover:bg-white/[0.06]')}>
+                      {dl.quality}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* PREV / DOWNLOAD / NEXT */}
+            <div className="max-w-5xl mx-auto px-4 mt-4">
+              <div className="grid grid-cols-3 gap-3">
+                {data.prevSlug ? (
+                  <Link href={'/nonton/'+data.prevSlug} className="flex items-center justify-center gap-1.5 px-3 py-3 bg-white/[0.04] border border-white/[0.08] rounded-xl text-xs text-slate-300 hover:bg-white/[0.08] hover:text-white hover:border-cyan-400/30 transition-all">
+                    <ChevronLeft size={16} />Episode Sebelumnya
+                  </Link>
+                ) : <span className="flex items-center justify-center px-3 py-3 text-xs text-slate-700">—</span>}
+
+                <a href={data.downloads[0]?.links[0]?.url || '#'} target="_blank" rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-1.5 px-3 py-3 bg-gradient-to-r from-cyan-500/20 to-blue-600/20 border border-cyan-400/30 rounded-xl text-xs font-semibold text-cyan-300 hover:bg-gradient-to-r hover:from-cyan-500/30 hover:to-blue-600/30 transition-all">
+                  <Download size={14} />Download
+                </a>
+
+                {data.nextSlug ? (
+                  <Link href={'/nonton/'+data.nextSlug} className="flex items-center justify-center gap-1.5 px-3 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-xl text-xs font-semibold hover:shadow-lg hover:shadow-cyan-500/25 transition-all">
+                    Episode Selanjutnya<ChevronRight size={16} />
+                  </Link>
+                ) : <span className="flex items-center justify-center px-3 py-3 text-xs text-slate-700">—</span>}
+              </div>
+            </div>
+
+            {/* DOWNLOAD LINKS PANEL */}
+            <div className="max-w-5xl mx-auto px-4 mt-4 mb-8">
+              <details className="group">
+                <summary className="text-xs text-slate-500 cursor-pointer hover:text-slate-300 flex items-center gap-1 select-none">
+                  <List size={12} />Semua Link Download ({data.downloads.length} kualitas)
+                </summary>
+                <div className="mt-3 bg-white/[0.02] border border-white/[0.06] rounded-xl p-4">
+                  {data.downloads.length>0 ? (
+                    <div className="space-y-3">
+                      {data.downloads.map((dl,i) => (
+                        <div key={i} className="bg-white/[0.02] border border-white/[0.04] rounded-lg p-2.5">
+                          <p className="text-[10px] font-bold text-cyan-400 uppercase mb-2">{dl.quality}</p>
+                          <div className="flex flex-wrap gap-1">
+                            {dl.links.map((link,j) => <a key={j} href={link.url} target="_blank" rel="noopener noreferrer" className="px-2.5 py-1 bg-white/[0.04] border border-white/[0.08] rounded-full text-[10px] text-slate-300 hover:bg-cyan-500/15 hover:text-cyan-300 hover:border-cyan-400/30 transition-all inline-flex items-center gap-1">{link.name}<ExternalLink size={9} /></a>)}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : <p className="text-xs text-slate-500 text-center py-2">Tidak ada link download.</p>}
+                  <p className="text-[10px] text-slate-600 mt-3 text-center">Password RAR: <code className="text-cyan-500">Samehadaku.care</code></p>
+                </div>
+              </details>
+            </div>
+
+            {/* RELATED EPISODES */}
+            {data.relatedEpisodes.length>0 && (
+              <div className="max-w-5xl mx-auto px-4 mb-12">
+                <h2 className="text-sm font-bold text-white flex items-center gap-2 mb-3"><List size={14} className="text-cyan-400" />Episode Lainnya</h2>
+                <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+                  {data.relatedEpisodes.map((ep,i) => (
+                    <Link key={i} href={'/nonton/'+ep.slug} className={'px-3 py-2 border rounded-lg text-xs transition-all flex items-center gap-2 shrink-0 max-w-[160px] '+(ep.slug===slug?'border-cyan-400/30 bg-cyan-500/10 text-cyan-300':'border-white/[0.04] bg-white/[0.01] text-slate-400 hover:bg-white/[0.05] hover:text-slate-200')}>
+                      <span className="truncate">{ep.title.replace(/^Episode\s*(\d+)/i,'Ep $1')}</span>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
+        )}
+
+        {/* FULLSCREEN NAV */}
+        {fullscreen && (
+          <div className="flex items-center justify-between px-4 py-2 bg-black shrink-0">
+            <div className="flex items-center gap-2">
+              {data.prevSlug && <Link href={'/nonton/'+data.prevSlug} className="px-3 py-1.5 text-xs text-white/70 bg-white/10 rounded-full hover:bg-white/20"><ChevronLeft size={14} className="inline -ml-1" />Prev</Link>}
+            </div>
+            <span className="text-xs text-white/50 truncate mx-2">{data.title}</span>
+            <div className="flex items-center gap-2">
+              <button onClick={toggleFullscreen} className="p-1.5 text-white/70 hover:text-white"><Maximize size={16} /></button>
+              {data.nextSlug && <Link href={'/nonton/'+data.nextSlug} className="px-3 py-1.5 text-xs text-white/70 bg-white/10 rounded-full hover:bg-white/20">Next<ChevronRight size={14} className="inline -mr-1" /></Link>}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
