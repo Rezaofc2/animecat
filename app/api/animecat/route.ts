@@ -1,9 +1,12 @@
 import { NextRequest } from "next/server";
-import * as scraper from "../../../lib/animecat";
+import * as scraperSamehadaku from "../../../lib/animecat";
+import * as scraperOtakudesu from "../../../lib/otakudesu";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const action = searchParams.get("action") || "terbaru";
+  const server = searchParams.get("server") || "2";
+  const scraper = server === "1" ? scraperSamehadaku : scraperOtakudesu;
 
   try {
     switch (action) {
