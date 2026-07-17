@@ -61,7 +61,7 @@ export default async function AnimeDetailPage({ params, searchParams }: { params
             </div>
             {detail.genres.length>0 && (
               <div className="flex flex-wrap gap-1.5 mt-3">
-                {detail.genres.slice(0, 15).map((g,i) => <Link key={i} href={'/search?genre='+encodeURIComponent(g.toLowerCase().replace(/\s+/g,'-'))+'&server='+server} className="px-2.5 py-0.5 bg-white/[0.04] border border-white/[0.06] rounded-full text-[10px] text-slate-400 hover:bg-cyan-500/15 hover:text-cyan-300 hover:border-cyan-400/30 transition-all">{g}</Link>)}
+                {detail.genres.map((g,i) => <Link key={i} href={'/search?genre='+encodeURIComponent(g.toLowerCase().replace(/\s+/g,'-'))+'&server='+server} className="px-2.5 py-0.5 bg-white/[0.04] border border-white/[0.06] rounded-full text-[10px] text-slate-400 hover:bg-cyan-500/15 hover:text-cyan-300 hover:border-cyan-400/30 transition-all">{g}</Link>)}
               </div>
             )}
             {detail.episodes.length>0 && (
@@ -105,12 +105,7 @@ export default async function AnimeDetailPage({ params, searchParams }: { params
                   <span className="text-slate-200 font-medium">: {detail.studio}</span>
                 </div>
               )}
-              {detail.genres.length > 0 && (
-                <div className="flex justify-between col-span-2">
-                  <span className="text-slate-500 shrink-0">Genre</span>
-                  <span className="text-slate-200 font-medium text-right">: {detail.genres.join(', ')}</span>
-                </div>
-              )}
+
             </div>
           </div>
         )}
