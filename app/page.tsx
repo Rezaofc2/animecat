@@ -8,6 +8,9 @@ interface AnimeCard { title: string; slug: string; poster: string; episode?: str
 
 export default function HomePage() {
   const [terbaru, setTerbaru] = useState<AnimeCard[]>([]);
+
+  // Strip "Episode X ..." suffix from title for display
+  const cleanTitle = (t: string) => t.replace(/\s*Episode\s+\d+.*$/i, '').trim();
   const [populer, setPopuler] = useState<AnimeCard[]>([]);
   const [loading, setLoading] = useState(true);
   const [server, setServer] = useState(2);
@@ -128,7 +131,7 @@ export default function HomePage() {
                     )}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2"><Play size={22} className="text-white/90" fill="white"/></div>
                   </div>
-                  <h3 className="mt-1.5 text-[11px] font-medium text-slate-200 line-clamp-2 group-hover:text-cyan-300 transition-colors leading-tight">{item.title}</h3>
+                  <h3 className="mt-1.5 text-[11px] font-medium text-slate-200 line-clamp-2 group-hover:text-cyan-300 transition-colors leading-tight">{cleanTitle(item.title)}</h3>
                 </Link>
               )})}
             </div>
