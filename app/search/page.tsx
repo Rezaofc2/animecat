@@ -147,7 +147,7 @@ function SearchPageInner() {
 }
 
 function AnimeGrid({ items, server }: { items: AnimeCard[]; server: string }) {
-  const cleanTitle = (t: string) => t.replace(/\s*Episode\s+\d+.*$/i, '').trim();
+  const cleanTitle = (t: string) => { const c = t.replace(/\s*Episode\s+\d+\s*.*$/i, '').trim(); return c || t; };
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
       {items.map((item, i) => (
