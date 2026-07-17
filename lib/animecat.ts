@@ -135,7 +135,6 @@ export async function getDaftarAnime(params: {
   const { page = 1, order = 'latest', genre } = params;
   let url: string;
   if (genre) {
-    // samehadaku.li uses /genres/{genre}/ for page 1, /genres/{genre}/page/2/ for page 2+
     if (page <= 1) {
       url = `${BASE}/genres/${encodeURIComponent(genre)}/`;
     } else {
@@ -194,7 +193,6 @@ export async function getDetail(slug: string): Promise<AnimeDetail | null> {
   $('body').text().match(/Status\s*:\s*(\w+)/i) && (info['status'] = RegExp.$1);
   $('body').text().match(/Type\s*:\s*(\w+)/i) && (info['type'] = RegExp.$1);
 
-  // Genres - dedup and only pick from proper genre section
   const genresSet = new Set<string>();
   $('.genxed a, .genres a[rel="tag"]').each((_, el) => {
     const g = $(el).text().trim();
@@ -249,14 +247,11 @@ export async function getEpisode(slug: string): Promise<EpisodeData | null> {
   const prevSlug = prevHref.replace(BASE, '').replace(/^\/+|\/+$/g, '') || undefined;
   const nextSlug = nextHref.replace(BASE, '').replace(/^\/+|\/+$/g, '') || undefined;
 
-  // Find real video URL - check lazy-loaded iframe data-litespeed-src first
   let streamUrl: string | undefined;
-  // Blogger/Vimeo lazy-loaded iframe
   const lazyIframe = $('iframe[data-litespeed-src]').first().attr('data-litespeed-src');
   if (lazyIframe && (lazyIframe.includes('video.g') || lazyIframe.includes('blogger') || lazyIframe.includes('embed'))) {
     streamUrl = lazyIframe;
   }
-  // Regular iframe
   if (!streamUrl) {
     const iframeSrc = $('iframe').first().attr('src');
     if (iframeSrc && !iframeSrc.includes('about:blank') && !iframeSrc.includes('facebook')) {
@@ -264,14 +259,12 @@ export async function getEpisode(slug: string): Promise<EpisodeData | null> {
     }
   }
 
-  // Downloads
   const downloads: EpisodeData['downloads'] = [];
   const foundUrls = new Set<string>();
   $('a').each((_, el) => {
     const href = ($(el).attr('href') || '').trim();
     if (!href || foundUrls.has(href)) return;
 
-    // match download + streaming + cloud storage links
     const isDL = /gofile|krakenfiles|acefile|pixeldrain|mediafire|filedon|vidhide|mp4upload|drive\.google|mega\.nz|streamtape|doodstream|voe\.sx|mixdrop|terabox|dropbox|zippyshare|anonfiles|racaty|uqload|streamwish|lvturbo|filelions|upload\.cat|bayfiles/i.test(href);
     if (!isDL) return;
     foundUrls.add(href);
@@ -290,7 +283,6 @@ export async function getEpisode(slug: string): Promise<EpisodeData | null> {
     if (!dlGroup.links.find(l => l.url === href)) dlGroup.links.push({ name: linkName, url: href });
   });
 
-  // Related episodes
   const relatedEpisodes: EpisodeData['relatedEpisodes'] = [];
   const seenRel = new Set<string>();
   $('.eplister li, .episode-list li, .episodelist li').each((_, el) => {
@@ -310,7 +302,7 @@ export async function getEpisode(slug: string): Promise<EpisodeData | null> {
 
 export function getGenres(): { name: string; slug: string }[] {
   const genres = [
-    'Action','Adult Cast','Adventure','Anthropomorphic','Avant Garde','Boys Love','CGDCT','Childcare',
+    'Action','Adult Cast','Adventure','Anthropomorphic','Avant Garde','Boys Love','CGDC','Childcare',
     'Comedy','Crossdressing','Delinquents','Detective','Drama','Ecchi','Educational','Erotica',
     'Fantasy','Gag Humor','Girls Love','Gore','Gourmet','Harem','Hentai','High Stakes Game',
     'Historical','Horror','Idols (Female)','Idols (Male)','Isekai','Iyashikei','Josei','Kids',
