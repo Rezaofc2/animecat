@@ -109,8 +109,8 @@ function NontonPageInner() {
 
   const shortEp = (t: string) => {
     const m = t.match(/Episode\s*(\d+)/i);
-    if (m) return 'Ep ' + m[1];
-    return t.length > 20 ? t.slice(0, 18) + '...' : t;
+    if (m) return 'Episode ' + m[1];
+    return 'Episode ' + t.length > 20 ? t.slice(0, 18) + '...' : t;
   };
 
   const streamUrl = data?.streamUrl || '';
