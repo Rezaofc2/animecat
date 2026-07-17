@@ -33,9 +33,7 @@ export default async function AnimeDetailPage({ params, searchParams }: { params
   const shortTitle = (t: string) => {
     const epMatch = t.match(/Episode\s*\d+/i);
     if (epMatch) return epMatch[0];
-    // Remove "Subtitle Indonesia" suffix
-    const clean = t.replace(/\s*Subtitle Indonesia\s*$/i, '').trim();
-    return clean.length > 25 ? clean.slice(0, 23) + '...' : clean;
+    return t.length > 25 ? t.slice(0, 23) + '...' : t;
   };
 
   return (
@@ -122,7 +120,6 @@ export default async function AnimeDetailPage({ params, searchParams }: { params
               {detail.episodes.map((ep,i) => (
                 <Link key={i} href={'/nonton/'+ep.slug+'?server='+server} className="flex items-center gap-2 px-3 py-2.5 bg-white/[0.02] border border-white/[0.04] rounded-xl hover:bg-white/[0.05] hover:border-cyan-400/20 transition-all group">
                   <span className="text-[10px] font-medium text-white/80 line-clamp-1 truncate">{shortTitle(ep.title)}</span>
-                  <span className="text-[10px] text-slate-500 ml-auto shrink-0">{ep.date}</span>
                   <ChevronRight size={12} className="text-slate-600 shrink-0 group-hover:text-cyan-400" />
                 </Link>
               ))}
