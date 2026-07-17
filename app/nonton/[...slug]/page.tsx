@@ -1,9 +1,10 @@
+
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ArrowLeft, Maximize, ChevronLeft, ChevronRight, List, ExternalLink, Download, MonitorPlay } from "lucide-react";
+import { ArrowLeft, Maximize, ChevronLeft, ChevronRight, List, ExternalLink, Download, MonitorPlay, Lock, LockOpen } from "lucide-react";
 
 interface EpisodeData {
   title: string; animeSlug?: string; prevSlug?: string; nextSlug?: string;
@@ -18,8 +19,10 @@ export default function NontonPage() {
   const [data, setData] = useState<EpisodeData | null>(null);
   const [loading, setLoading] = useState(true);
   const [fullscreen, setFullscreen] = useState(false);
+  const [wakeLocked, setWakeLocked] = useState(false);
   const [error, setError] = useState("");
   const containerRef = useRef<HTMLDivElement>(null);
+  const wakeLockRef = useRef<any>(null);
 
   useEffect(() => {
     if (!slug) return;
@@ -39,6 +42,42 @@ export default function NontonPage() {
       localStorage.setItem('animecat_history', JSON.stringify(unique));
     } catch(e) {}
   }, [data]);
+
+  const toggleWakeLock = useCallback(async () => {
+    try {
+      if (wakeLockRef.current) {
+        await wakeLockRef.current.release();
+        wakeLockRef.current = null;
+        setWakeLocked(false);
+      } else if ('wakeLock' in navigator) {
+        wakeLockRef.current = await navigator.wakeLock.request('screen');
+        setWakeLocked(true);
+        wakeLockRef.current.addEventListener('release', () => {
+          wakeLockRef.current = null;
+          setWakeLocked(false);
+        });
+      }
+    } catch(e) {
+      setWakeLocked(false);
+    }
+  }, []);
+
+  // Re-acquire wake lock on visibility change
+  useEffect(() => {
+    const onVisible = async () => {
+      if (document.visibilityState === 'visible' && wakeLocked && !wakeLockRef.current && 'wakeLock' in navigator) {
+        try {
+          wakeLockRef.current = await navigator.wakeLock.request('screen');
+          wakeLockRef.current.addEventListener('release', () => {
+            wakeLockRef.current = null;
+            setWakeLocked(false);
+          });
+        } catch(e) {}
+      }
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
+  }, [wakeLocked]);
 
   const toggleFullscreen = useCallback(() => {
     if (!document.fullscreenElement) containerRef.current?.requestFullscreen?.().catch(() => {});
@@ -80,6 +119,9 @@ export default function NontonPage() {
           <div className="max-w-5xl mx-auto px-4 h-14 flex items-center gap-2">
             <button onClick={() => window.history.back()} className="p-2 -ml-2 text-slate-400 hover:text-white shrink-0"><ArrowLeft size={18} /></button>
             <span className="text-sm font-bold text-white truncate flex-1">{data.title}</span>
+            <button onClick={toggleWakeLock} className={"p-2 transition-colors rounded-lg hover:bg-white/[0.05] shrink-0 " + (wakeLocked ? 'text-cyan-400' : 'text-slate-400 hover:text-cyan-400')} title={wakeLocked ? 'Matikan gembok layar' : 'Aktifkan gembok layar'}>
+              {wakeLocked ? <Lock size={16} /> : <LockOpen size={16} />}
+            </button>
             <button onClick={toggleFullscreen} className="p-2 text-slate-400 hover:text-cyan-400 transition-colors rounded-lg hover:bg-white/[0.05] shrink-0"><Maximize size={16} /></button>
           </div>
         </header>
