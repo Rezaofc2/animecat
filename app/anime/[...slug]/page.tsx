@@ -13,21 +13,22 @@ interface AnimeDetail {
   streamUrl?: string;
 }
 
-export default async function AnimeDetailPage({ params }: { params: Promise<{ slug: string[] }> }) {
+export default async function AnimeDetailPage({ params, searchParams }: { params: Promise<{ slug: string[] }>; searchParams: Promise<{ server?: string }> }) {
   const awaitedParams = await params;
+  const awaitedSP = await searchParams;
   const slug = awaitedParams.slug?.join("/") || "";
+  const server = awaitedSP.server || "2";
   if (!slug) notFound();
 
   const heads = await getHeaders();
   const proto = heads.get('x-forwarded-proto') || 'https';
   const host = heads.get('x-forwarded-host') || heads.get('host') || 'localhost:3000';
   const base = `${proto}://${host}`;
-  const res = await fetch(base + '/api/animecat?action=detail&slug=' + encodeURIComponent(slug), { next: { revalidate: 300 } });
+  const res = await fetch(base + '/api/animecat?action=detail&slug=' + encodeURIComponent(slug) + '&server=' + server, { next: { revalidate: 300 } });
   if (!res.ok) notFound();
   const detail: AnimeDetail | null = await res.json();
   if (!detail) notFound();
 
-  // Shorten episode titles: remove anime name prefix
   const shortTitle = (t: string) => {
     const epMatch = t.match(/Episode\s*\d+/i);
     if (epMatch) return epMatch[0];
@@ -59,16 +60,16 @@ export default async function AnimeDetailPage({ params }: { params: Promise<{ sl
             </div>
             {detail.genres.length>0 && (
               <div className="flex flex-wrap gap-1.5 mt-3">
-                {detail.genres.slice(0, 15).map((g,i) => <Link key={i} href={'/search?genre='+encodeURIComponent(g.toLowerCase().replace(/\s+/g,'-'))} className="px-2.5 py-0.5 bg-white/[0.04] border border-white/[0.06] rounded-full text-[10px] text-slate-400 hover:bg-cyan-500/15 hover:text-cyan-300 hover:border-cyan-400/30 transition-all">{g}</Link>)}
+                {detail.genres.slice(0, 15).map((g,i) => <Link key={i} href={'/search?genre='+encodeURIComponent(g.toLowerCase().replace(/\s+/g,'-'))+'&server='+server} className="px-2.5 py-0.5 bg-white/[0.04] border border-white/[0.06] rounded-full text-[10px] text-slate-400 hover:bg-cyan-500/15 hover:text-cyan-300 hover:border-cyan-400/30 transition-all">{g}</Link>)}
               </div>
             )}
             {detail.synopsis && <div className="mt-4"><p className="text-sm text-slate-400 leading-relaxed line-clamp-5">{detail.synopsis}</p></div>}
             {detail.episodes.length>0 && (
               <div className="flex items-center gap-3 mt-4">
-                <Link href={'/nonton/'+detail.episodes[0].slug} className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-full text-sm font-semibold hover:shadow-lg hover:shadow-cyan-500/25 transition-all">
+                <Link href={'/nonton/'+detail.episodes[0].slug+'?server='+server} className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-full text-sm font-semibold hover:shadow-lg hover:shadow-cyan-500/25 transition-all">
                   <Play size={14} fill="white" />Episode {detail.episodes.length}
                 </Link>
-                <Link href={'/nonton/'+detail.episodes[detail.episodes.length-1].slug} className="inline-flex items-center gap-2 px-4 py-2 bg-white/[0.04] border border-white/[0.08] text-white rounded-full text-sm font-semibold hover:bg-white/[0.08] hover:border-cyan-400/30 transition-all">
+                <Link href={'/nonton/'+detail.episodes[detail.episodes.length-1].slug+'?server='+server} className="inline-flex items-center gap-2 px-4 py-2 bg-white/[0.04] border border-white/[0.08] text-white rounded-full text-sm font-semibold hover:bg-white/[0.08] hover:border-cyan-400/30 transition-all">
                   <Play size={14} />Episode 1
                 </Link>
               </div>
@@ -81,7 +82,7 @@ export default async function AnimeDetailPage({ params }: { params: Promise<{ sl
           {detail.episodes.length>0 ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
               {detail.episodes.map((ep,i) => (
-                <Link key={i} href={'/nonton/'+ep.slug} className="flex items-center gap-2 px-3 py-2.5 bg-white/[0.02] border border-white/[0.04] rounded-xl hover:bg-white/[0.05] hover:border-cyan-400/20 transition-all group">
+                <Link key={i} href={'/nonton/'+ep.slug+'?server='+server} className="flex items-center gap-2 px-3 py-2.5 bg-white/[0.02] border border-white/[0.04] rounded-xl hover:bg-white/[0.05] hover:border-cyan-400/20 transition-all group">
                   <span className="text-[9px] font-bold text-cyan-400 shrink-0">{shortTitle(ep.title)}</span>
                   <span className="text-[10px] text-slate-500 ml-auto shrink-0">{ep.date}</span>
                   <ChevronRight size={12} className="text-slate-600 shrink-0 group-hover:text-cyan-400" />
