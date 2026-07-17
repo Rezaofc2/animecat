@@ -10,7 +10,7 @@ export default function HomePage() {
   const [terbaru, setTerbaru] = useState<AnimeCard[]>([]);
 
   // Strip "Episode X ..." suffix from title for display
-  const cleanTitle = (t: string) => t.replace(/\s*Episode\s+\d+.*$/i, '').trim();
+  const cleanTitle = (t: string) => { const c = t.replace(/\s*Episode\s+\d+\s*.*$/i, '').trim(); return c || t; };
   const [populer, setPopuler] = useState<AnimeCard[]>([]);
   const [loading, setLoading] = useState(true);
   const [server, setServer] = useState(2);
