@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Play, Sparkles, Flame, Search, Tv, Film } from "lucide-react";
+import { Play, Sparkles, Flame, Search, Tv, Film, Server } from "lucide-react";
 
 interface AnimeCard { title: string; slug: string; poster: string; episode?: string; rating?: string; type?: string; }
 
@@ -10,13 +10,27 @@ export default function HomePage() {
   const [terbaru, setTerbaru] = useState<AnimeCard[]>([]);
   const [populer, setPopuler] = useState<AnimeCard[]>([]);
   const [loading, setLoading] = useState(true);
+  const [server, setServer] = useState(2);
+
+  useEffect(() => {
+    try {
+      const s = localStorage.getItem('animecat_server');
+      if (s === '1' || s === '2') setServer(parseInt(s));
+    } catch(e) {}
+  }, []);
+
+  const changeServer = (s: number) => {
+    setServer(s);
+    try { localStorage.setItem('animecat_server', String(s)); } catch(e) {}
+  };
 
   useEffect(() => {
     async function load() {
+      setLoading(true);
       try {
         const [t, p] = await Promise.all([
-          fetch('/api/animecat?action=terbaru').then(r => r.json()),
-          fetch('/api/animecat?action=populer').then(r => r.json()),
+          fetch('/api/animecat?action=terbaru&server=' + server).then(r => r.json()),
+          fetch('/api/animecat?action=populer&server=' + server).then(r => r.json()),
         ]);
         setTerbaru(Array.isArray(t) ? t : []);
         setPopuler(Array.isArray(p) ? p : []);
@@ -24,7 +38,7 @@ export default function HomePage() {
       setLoading(false);
     }
     load();
-  }, []);
+  }, [server]);
 
   const genres = [
     'Action','Adventure','Comedy','Drama','Fantasy','Harem','Horror',
@@ -43,10 +57,20 @@ export default function HomePage() {
           </Link>
           <nav className="flex items-center gap-3 text-sm text-slate-400">
             <Link href="/" className="text-cyan-400 font-medium">Home</Link>
-            <Link href="/search" className="hover:text-cyan-300 flex items-center gap-1"><Search size={14} />Cari</Link>
+            <Link href={"/search?server="+server} className="hover:text-cyan-300 flex items-center gap-1"><Search size={14} />Cari</Link>
           </nav>
         </div>
       </header>
+
+      {/* Server Switcher */}
+      <div className="bg-[#0a0a14] border-b border-white/[0.04]">
+        <div className="max-w-7xl mx-auto px-4 py-2 flex items-center justify-center gap-2">
+          <Server size={12} className="text-slate-500" />
+          <span className="text-[10px] text-slate-500 mr-1">Server:</span>
+          <button onClick={() => changeServer(1)} className={"px-3 py-1 rounded-full text-[10px] font-semibold transition-all " + (server===1 ? "bg-cyan-500/20 text-cyan-400 border border-cyan-400/30" : "bg-white/[0.03] text-slate-500 border border-white/[0.06] hover:text-slate-300")}>Samehadaku</button>
+          <button onClick={() => changeServer(2)} className={"px-3 py-1 rounded-full text-[10px] font-semibold transition-all " + (server===2 ? "bg-purple-500/20 text-purple-400 border border-purple-400/30" : "bg-white/[0.03] text-slate-500 border border-white/[0.06] hover:text-slate-300")}>Otakudesu</button>
+        </div>
+      </div>
 
       <section className="relative py-10 md:py-14 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/8 via-blue-500/5 to-purple-500/3" />
@@ -54,9 +78,9 @@ export default function HomePage() {
           <h1 className="text-3xl md:text-4xl font-black">
             <span className="bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400 bg-clip-text text-transparent">Nonton Anime Sub Indo</span>
           </h1>
-          <p className="mt-2 text-sm text-slate-400 max-w-lg mx-auto">Streaming anime subtitle Indonesia gratis, download HD tersedia</p>
+          <p className="mt-2 text-sm text-slate-400 max-w-lg mx-auto">{server===1 ? 'Samehadaku' : 'Otakudesu'} — streaming anime subtitle Indonesia gratis</p>
           <div className="flex justify-center gap-3 mt-5">
-            <Link href="/search" className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-full text-sm font-semibold hover:shadow-lg hover:shadow-cyan-500/25 transition-all"><Search size={15} />Cari Anime</Link>
+            <Link href={"/search?server="+server} className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-full text-sm font-semibold hover:shadow-lg hover:shadow-cyan-500/25 transition-all"><Search size={15} />Cari Anime</Link>
           </div>
         </div>
       </section>
@@ -67,7 +91,7 @@ export default function HomePage() {
         <section>
           <div className="flex items-end justify-between mb-4">
             <h2 className="text-lg font-bold text-white flex items-center gap-2"><Sparkles size={17} className="text-cyan-400" />Terbaru</h2>
-            <Link href="/search?tab=terbaru" className="text-[11px] text-cyan-400 hover:text-cyan-300 font-semibold">Lihat Semua →</Link>
+            <Link href={"/search?tab=terbaru&server="+server} className="text-[11px] text-cyan-400 hover:text-cyan-300 font-semibold">Lihat Semua →</Link>
           </div>
           {loading ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
@@ -79,7 +103,7 @@ export default function HomePage() {
                 const epNum = item.episode?.match(/Episode\s*(\d+)/i);
                 const isOngoing = item.episode?.toLowerCase().includes('ongoing');
                 return (
-                <Link key={i} href={'/anime/'+item.slug} className="block group">
+                <Link key={i} href={'/anime/'+item.slug+'?server='+server} className="block group">
                   <div className="relative aspect-[3/4] rounded-xl overflow-hidden bg-white/[0.03] border border-white/[0.06]">
                     {item.poster ? <img src={item.poster} alt={item.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy" />
                     : <div className="w-full h-full flex items-center justify-center text-slate-700"><Tv size={30} /></div>}
@@ -108,7 +132,7 @@ export default function HomePage() {
           ) : populer.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2">
               {populer.slice(0,10).map((item,i) => (
-                <Link key={i} href={'/anime/'+item.slug} className="flex items-center gap-3 p-3 bg-white/[0.02] border border-white/[0.04] rounded-xl hover:bg-white/[0.04] hover:border-cyan-400/20 transition-all group">
+                <Link key={i} href={'/anime/'+item.slug+'?server='+server} className="flex items-center gap-3 p-3 bg-white/[0.02] border border-white/[0.04] rounded-xl hover:bg-white/[0.04] hover:border-cyan-400/20 transition-all group">
                   <span className="text-lg font-black text-slate-500 w-6 text-center shrink-0">{i+1}</span>
                   <div className="w-10 h-14 rounded-lg overflow-hidden bg-white/[0.05] shrink-0">
                     {item.poster ? <img src={item.poster} alt={item.title} className="w-full h-full object-cover" loading="lazy" />
@@ -129,13 +153,13 @@ export default function HomePage() {
           <h2 className="text-lg font-bold text-white flex items-center gap-2 mb-4"><Film size={17} className="text-emerald-400" />Genre</h2>
           <div className="flex flex-wrap gap-1.5">
             {genres.map((g,i) => (
-              <Link key={i} href={'/search?genre='+g.slug} className="px-3 py-1.5 bg-white/[0.03] border border-white/[0.06] rounded-full text-xs text-slate-300 hover:bg-cyan-500/15 hover:text-cyan-300 hover:border-cyan-400/30 transition-all">{g.name}</Link>
+              <Link key={i} href={'/search?genre='+g.slug+'&server='+server} className="px-3 py-1.5 bg-white/[0.03] border border-white/[0.06] rounded-full text-xs text-slate-300 hover:bg-cyan-500/15 hover:text-cyan-300 hover:border-cyan-400/30 transition-all">{g.name}</Link>
             ))}
           </div>
         </section>
       </main>
 
-      <footer className="border-t border-white/[0.04] py-5 text-center text-[11px] text-slate-600">AnimeCat — Nonton anime gratis dari Samehadaku</footer>
+      <footer className="border-t border-white/[0.04] py-5 text-center text-[11px] text-slate-600">AnimeCat — Nonton anime gratis dari {server===1 ? 'Samehadaku' : 'Otakudesu'}</footer>
     </div>
   );
 }
