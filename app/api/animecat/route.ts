@@ -5,8 +5,8 @@ import * as scraperOtakudesu from "../../../lib/otakudesu";
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const action = searchParams.get("action") || "terbaru";
-  const server = searchParams.get("server") || "2";
-  const scraper = server === "1" ? scraperSamehadaku : scraperOtakudesu;
+  const server = searchParams.get("server") || "1";
+  const scraper = server === "2" ? scraperOtakudesu : scraperSamehadaku;
 
   try {
     switch (action) {
