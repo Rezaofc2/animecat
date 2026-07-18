@@ -59,9 +59,7 @@ function NontonPageInner() {
           setWakeLocked(false);
         });
       }
-    } catch(e) {
-      setWakeLocked(false);
-    }
+    } catch(e) { setWakeLocked(false); }
   }, []);
 
   useEffect(() => {
@@ -81,8 +79,13 @@ function NontonPageInner() {
   }, [wakeLocked]);
 
   const toggleFullscreen = useCallback(() => {
-    if (!document.fullscreenElement) containerRef.current?.requestFullscreen?.().catch(() => {});
-    else document.exitFullscreen().catch(() => {});
+    try {
+      if (!document.fullscreenElement) {
+        containerRef.current?.requestFullscreen?.().catch(() => {});
+      } else {
+        document.exitFullscreen?.().catch(() => {});
+      }
+    } catch(e) {}
   }, []);
 
   useEffect(() => {
@@ -110,14 +113,13 @@ function NontonPageInner() {
   const shortEp = (title: string, epSlug: string) => {
     const m = title.match(/Episode\s*(\d+)/i);
     if (m) return 'Episode ' + m[1];
-    // Try extract from slug: "foo-episode-5-sub-indo" -> "Episode 5"
-    const sm = epSlug.match(/episode[-_](\d+)/i);
+    const sm = epSlug.match(/episode[_-](\d+)/i);
     if (sm) return 'Episode ' + sm[1];
     return 'Episode ?';
   };
 
   const streamUrl = data?.streamUrl || '';
-  const downloadUrl = data?.downloads[0]?.links[0]?.url || '';
+  const downloadUrl = data?.downloads?.[0]?.links?.[0]?.url || '';
 
   if (loading) return (
     <div className="min-h-screen bg-[#0a0a12] flex items-center justify-center">
@@ -238,7 +240,7 @@ function NontonPageInner() {
         {fullscreen && (
           <div className="flex items-center justify-between px-4 py-2 bg-black shrink-0">
             {data.prevSlug && <Link href={'/nonton/'+data.prevSlug} className="px-3 py-1.5 text-xs text-white/70 bg-white/10 rounded-full hover:bg-white/20"><ChevronLeft size={14} className="inline -ml-1" />Prev</Link>}
-            <span className="text-xs text-white/50 truncate mx-2">{shortEp(data.title)}</span>
+            <span className="text-xs text-white/50 truncate mx-2">{data.title ? shortEp(data.title, slug) : ''}</span>
             <div className="flex items-center gap-2">
               <button onClick={toggleFullscreen} className="p-1.5 text-white/70 hover:text-white"><Maximize size={16} /></button>
               {data.nextSlug && <Link href={'/nonton/'+data.nextSlug} className="px-3 py-1.5 text-xs text-white/70 bg-white/10 rounded-full hover:bg-white/20">Next<ChevronRight size={14} className="inline -mr-1" /></Link>}
@@ -250,7 +252,7 @@ function NontonPageInner() {
   );
 }
 
-export default function NontomPage() {
+export default function NontonPage() {
   return (
     <Suspense fallback={
       <div className="min-h-screen bg-[#0a0a12] flex items-center justify-center">
