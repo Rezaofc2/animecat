@@ -1,10 +1,8 @@
-import Link from "next/link";
-import { ArrowLeft, Play, Tv, Circle, ChevronRight, MonitorPlay, Download } from "lucide-react";
-import { notFound } from "next/navigation";
-import { headers as getHeaders } from "next/headers";
-import BackButton from "./BackButton";
+"use client";
 
-export const revalidate = 300;
+import Link from "next/link";
+import { useState, useEffect } from 'react';
+import { ArrowLeft, Play, Tv, Circle, ChevronRight, MonitorPlay, Download, Loader2 } from "lucide-react";
 
 interface AnimeDetail {
   title: string; poster: string; rating: string; type: string; status: string;
@@ -14,21 +12,26 @@ interface AnimeDetail {
   streamUrl?: string;
 }
 
-export default async function AnimeDetailPage({ params, searchParams }: { params: Promise<{ slug: string[] }>; searchParams: Promise<{ server?: string }> }) {
-  const awaitedParams = await params;
-  const awaitedSP = await searchParams;
-  const slug = awaitedParams.slug?.join("/") || "";
-  const server = awaitedSP.server || "2";
-  if (!slug) notFound();
+export default function AnimeDetailPage() {
+  const [detail, setDetail] = useState<AnimeDetail | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+  const [slug, setSlug] = useState("");
+  const [server, setServer] = useState("2");
 
-  const heads = await getHeaders();
-  const proto = heads.get('x-forwarded-proto') || 'https';
-  const host = heads.get('x-forwarded-host') || heads.get('host') || 'localhost:3000';
-  const base = `${proto}://${host}`;
-  const res = await fetch(base + '/api/animecat?action=detail&slug=' + encodeURIComponent(slug) + '&server=' + server, { next: { revalidate: 300 } });
-  if (!res.ok) notFound();
-  const detail: AnimeDetail | null = await res.json();
-  if (!detail) notFound();
+  useEffect(() => {
+    const path = window.location.pathname.replace(/^\/anime\//, '');
+    const sp = new URLSearchParams(window.location.search);
+    const sv = sp.get('server') || '2';
+    setSlug(path);
+    setServer(sv);
+    if (path) {
+      fetch(`/api/animecat?action=detail&slug=${encodeURIComponent(path)}&server=${sv}`)
+        .then(r => { if (!r.ok) throw new Error('not found'); return r.json(); })
+        .then((d: AnimeDetail) => { setDetail(d); setLoading(false); })
+        .catch(() => { setError(true); setLoading(false); });
+    }
+  }, []);
 
   const shortTitle = (t: string) => {
     const epMatch = t.match(/Episode\s*\d+/i);
@@ -36,11 +39,31 @@ export default async function AnimeDetailPage({ params, searchParams }: { params
     return t.length > 25 ? t.slice(0, 23) + '...' : t;
   };
 
+  if (loading) return (
+    <div className="min-h-screen bg-[#0a0a12] flex items-center justify-center">
+      <div className="text-center">
+        <Loader2 size={32} className="text-cyan-400 animate-spin mx-auto mb-3" />
+        <p className="text-slate-400 text-sm">Memuat detail anime...</p>
+      </div>
+    </div>
+  );
+
+  if (error || !detail) return (
+    <div className="min-h-screen bg-[#0a0a12] flex items-center justify-center">
+      <div className="text-center">
+        <p className="text-red-400 text-lg mb-2">Anime tidak ditemukan</p>
+        <Link href="/" className="text-cyan-400 text-sm hover:underline">← Kembali ke Beranda</Link>
+      </div>
+    </div>
+  );
+
   return (
     <div className="min-h-screen bg-[#0a0a12] flex flex-col">
       <header className="sticky top-0 z-50 bg-[#0a0a12]/95 backdrop-blur border-b border-white/[0.04]">
         <div className="max-w-5xl mx-auto px-4 h-14 flex items-center gap-2">
-          <BackButton />
+          <Link href="/" className="text-slate-400 hover:text-white transition-colors">
+            <ArrowLeft size={20} />
+          </Link>
           <span className="text-sm font-bold text-white truncate">{detail.title}</span>
         </div>
       </header>
@@ -77,7 +100,6 @@ export default async function AnimeDetailPage({ params, searchParams }: { params
           </div>
         </div>
 
-        {/* Metadata Info Table */}
         {(detail.totalEpisodes || detail.duration || detail.releaseDate || detail.studio) && (
           <div className="mb-6 p-4 bg-white/[0.02] border border-white/[0.04] rounded-xl">
             <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
@@ -101,12 +123,10 @@ export default async function AnimeDetailPage({ params, searchParams }: { params
                   <span className="text-slate-500">Studio:</span> <span className="text-slate-200 font-medium">{detail.studio}</span>
                 </div>
               )}
-
             </div>
           </div>
         )}
 
-        {/* Synopsis Section */}
         {detail.synopsis && (
           <div className="mb-6 p-4 bg-white/[0.02] border border-white/[0.04] rounded-xl">
             <p className="text-sm text-slate-400 leading-relaxed">{detail.synopsis}</p>
@@ -129,16 +149,6 @@ export default async function AnimeDetailPage({ params, searchParams }: { params
       </main>
 
       <footer className="border-t border-white/[0.04] py-5 text-center text-[11px] text-slate-600">AnimeCat</footer>
-
-      <script dangerouslySetInnerHTML={{ __html: `
-        try{
-          var h=JSON.parse(localStorage.getItem('animecat_history')||'[]');
-          h=h.filter(function(x){return x.slug!=='${slug}'});
-          h.unshift({title:${JSON.stringify(detail.title)},slug:'${slug}',poster:${JSON.stringify(detail.poster)},lastEp:${JSON.stringify(detail.episodes[0]?.title||'')}});
-          if(h.length>50)h=h.slice(0,50);
-          localStorage.setItem('animecat_history',JSON.stringify(h));
-        }catch(e){}
-      `}} />
     </div>
   );
 }

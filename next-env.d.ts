@@ -1,5 +1,6 @@
 /// <reference types="next" />
-/// <reference types="next/types/imageg" />
-/// <reference types="next/types/import-glob" />
+/// <reference types="next/image-types/global" />
+/// <reference path="./.next/types/routes.d.ts" />
 
-/// <reference path=".next/types/index.ts" />
+// NOTE: This file should not be edited
+// see https://nextjs.org/docs/app/api-reference/config/typescript for more information.

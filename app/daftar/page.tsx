@@ -1,22 +1,21 @@
-import Link from "next/link";
-import { ArrowLeft, Tv, Play } from "lucide-react";
+"use client";
 
-export const revalidate = 300;
+import Link from "next/link";
+import { useState, useEffect } from 'react';
+import { ArrowLeft, Tv, Play, Loader2 } from "lucide-react";
 
 interface AnimeCard { title: string; slug: string; poster: string; rating?: string; type?: string; }
 
-async function apiGet<T>(path: string): Promise<T | null> {
-  try {
-    const base = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
-    const res = await fetch(base + path, { next: { revalidate: 300 } });
-    if (!res.ok) return null;
-    return await res.json();
-  } catch { return null; }
-}
+export default function DaftarPage() {
+  const [items, setItems] = useState<AnimeCard[]>([]);
+  const [loading, setLoading] = useState(true);
 
-export default async function DaftarPage() {
-  const daftar = await apiGet<AnimeCard[]>('/api/animecat?action=daftar&order=title');
-  const items = daftar || [];
+  useEffect(() => {
+    fetch('/api/animecat?action=daftar&order=title')
+      .then(r => r.json())
+      .then(d => { setItems(Array.isArray(d) ? d : []); setLoading(false); })
+      .catch(() => setLoading(false));
+  }, []);
 
   const grouped: Record<string,AnimeCard[]> = {};
   items.forEach(item => {
@@ -26,6 +25,15 @@ export default async function DaftarPage() {
   });
 
   const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+
+  if (loading) return (
+    <div className="min-h-screen bg-[#0a0a12] flex items-center justify-center">
+      <div className="text-center">
+        <Loader2 size={32} className="text-cyan-400 animate-spin mx-auto mb-3" />
+        <p className="text-slate-400 text-sm">Memuat daftar anime...</p>
+      </div>
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-[#0a0a12] flex flex-col">
@@ -60,7 +68,7 @@ export default async function DaftarPage() {
           </div>;
         })}
 
-        {items.length===0 && <div className="text-center py-16 text-slate-500"><Tv size={40} className="mx-auto mb-3 text-slate-600" /><p>Memuat daftar anime...</p></div>}
+        {items.length===0 && <div className="text-center py-16 text-slate-500"><Tv size={40} className="mx-auto mb-3 text-slate-600" /><p>Tidak ada data. Silakan coba lagi nanti.</p></div>}
       </main>
 
       <footer className="border-t border-white/[0.04] py-5 text-center text-[11px] text-slate-600">AnimeCat — Daftar Anime A-Z</footer>
